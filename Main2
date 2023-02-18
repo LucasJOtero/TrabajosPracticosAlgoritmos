@@ -1,0 +1,269 @@
+// Lucas Otero 16/02/23 Trabajo Practico 1
+#include <iostream>
+#include <fstream>
+
+using namespace std;
+
+struct Nodo
+{
+    int codcli;
+    int codprod;
+    float peso;
+    float distancia;
+    Nodo *siguiente;
+};
+
+struct Nodo2
+{
+    int codprod;
+    float distancia;
+    Nodo2 *siguiente;
+};
+
+int error (int n) { cout << "Error numero " << n << endl; return 1;}
+
+void agregar(Nodo *&lista, int codcli, int codprod, float peso, float distancia) {
+
+    Nodo *nuevo_nodo = new Nodo();
+    nuevo_nodo->codcli = codcli;
+    nuevo_nodo->codprod = codprod;
+    nuevo_nodo->peso = peso;
+    nuevo_nodo->distancia = distancia;
+
+    Nodo *aux1 = lista;
+    
+    lista = nuevo_nodo;
+
+    nuevo_nodo->siguiente = aux1;
+
+}
+
+void punto1(Nodo *&lista, float limite, string vecnombres[], int nombres, string vecproductos[], int productos, int vecclisuplimite[]) {
+
+    Nodo *actual = new Nodo();
+
+    actual = lista; float peso = 0; int flag = 0; // La bandera es para no repetir el nombre cada vez que supere el limite
+
+    for (int i = 0; i < nombres; i++) {
+
+        flag = 0;
+
+        for (int j = 0; j < productos; j++) {
+
+            actual = lista; peso = 0;
+
+            while ((actual != NULL)) {
+
+                if ((actual->codcli == i) && (actual->codprod == j)) {
+
+                    peso += actual->peso;
+
+                }
+
+                actual = actual->siguiente;
+            }
+
+            if ((peso > limite) && (flag == 0)) {
+
+                cout << vecnombres[i] << ": " << vecproductos[j]; flag = 1;
+                vecclisuplimite[i] += 1;
+            }
+
+            else if ((peso > limite) && (flag == 1)) {
+
+                cout << ", " << vecproductos[j];
+                vecclisuplimite[i] += 1;
+            }
+        }
+        cout << "\n";
+    }
+}
+
+void ordenar(Nodo2 *&lista2, int codprod, float distancia) {
+
+    Nodo2 *nuevo_nodo = new Nodo2();
+
+    nuevo_nodo->codprod = codprod;
+    nuevo_nodo->distancia = distancia;
+
+    Nodo2 *aux1 = lista2;
+    Nodo2 *aux2;
+
+    while ((aux1 != NULL) && (aux1->distancia < distancia)) {
+
+        aux2 = aux1;
+        aux1 = aux1->siguiente;
+    }
+
+    if (lista2 == aux1) { lista2 = nuevo_nodo;}
+
+    else { aux2->siguiente = nuevo_nodo;}
+
+    nuevo_nodo->siguiente = aux1;
+}
+
+void mostrar(Nodo2 *&lista2, string vecproductos[], int &ultprod) {
+
+    Nodo2 *actual = new Nodo2();
+    actual = lista2;
+
+    while(actual != NULL) {
+        cout << vecproductos[actual->codprod] << ": " << actual->distancia <<endl;
+        if (actual->siguiente == NULL) { ultprod = actual->codprod;}
+        actual = actual->siguiente;
+    }
+}
+
+void punto2(Nodo *&lista, Nodo2 *&lista2, int cli, string vecproductos[], int productos, int &ultprod) {
+
+    Nodo *actual = new Nodo();
+
+    actual = lista; float distancia = 0;
+
+    for (int i = 0; i < productos; i++) {
+
+        actual = lista; distancia = 0;
+
+        while ((actual != NULL)) {
+
+            if ((actual->codcli == cli) && (actual->codprod == i)) {
+
+                distancia += actual->distancia;
+
+            }
+
+            actual = actual->siguiente;
+        }
+        
+        ordenar(lista2, i, distancia);
+    }
+
+    mostrar(lista2, vecproductos, ultprod);
+}
+
+void punto3(Nodo *&lista, int &ultprod, int &entregas){
+
+    Nodo *actual = new Nodo();
+    actual = lista;
+
+    while(actual != NULL) {
+
+        if (actual->codprod == ultprod) { entregas++;}
+        actual = actual->siguiente;
+    }
+}
+
+
+int main() {
+
+    const int nombres = 8;
+    const int productos = 5;
+
+    string vecnombres[nombres];
+    string vecproductos[productos];
+    string talcualelarchivo[nombres+productos];
+
+    ifstream Bdatos; Bdatos.open("Nombres.txt");
+
+    if (Bdatos.fail()) { error(1);}
+
+    for (int i = 0; i < nombres; i++) { Bdatos >> vecnombres[i];}
+
+    for (int i = 0; i < productos; i++) { Bdatos >> vecproductos[i];}
+
+    Bdatos.close();
+
+    /* Verificacion
+
+    for (int i = 0; i < nombres; i++) { cout << "Cliente " << i << ", " << vecnombres[i] << endl;}
+    cout << "\n";
+    for (int i = 0; i < productos; i++) {cout << "Producto " << i << ", " << vecproductos[i] << endl;}
+
+    */
+
+    //float kilos[nombres][productos] = {0};
+
+    //float km[nombres][productos] = {0};
+
+    Nodo *lista = NULL;
+
+    ifstream Archivo; Archivo.open("Datos.txt");
+
+    if (Archivo.fail()) { error(2);}
+
+    int tempnombre = 0, tempprod = 0; float tempkg = 0, tempkm = 0;
+
+    while (!Archivo.eof()) {
+
+        Archivo >> tempnombre; Archivo >> tempprod; Archivo >> tempkg; Archivo >> tempkm;
+
+        //kilos[tempnombre][tempprod] = (kilos[tempnombre][tempprod]) + tempkg;
+        agregar(lista, tempnombre, tempprod, tempkg, tempkm);
+
+        //km[tempnombre][tempprod] = (km[tempnombre][tempprod]) + tempkm;
+    }
+
+    Archivo.close();
+
+    // Punto 1
+
+    cout << "\nListado por clientes, de los tipos de productos que superen los 13000 Kg acumulados:\n" << endl;
+
+    float limite = 13000; /*int flag = 0; // La bandera es para no repetir el nombre cada vez que supere el limite
+
+    for (int i = 0; i < nombres; i++) {
+
+        flag = 1;
+
+        for (int j = 0; j < productos; j++) {
+
+            if (kilos[i][j] > limite && flag == 1) {
+
+                cout << vecnombres[i] << ": " << vecproductos[j]; flag = 0;
+            }
+
+            else if (kilos[i][j] > limite && flag == 0) {
+
+                cout << ", " << vecproductos[j];
+            }
+        }
+        cout << "\n";
+    }*/
+
+    int vecclisuplimite[nombres] = {0};
+
+    punto1(lista, limite, vecnombres, nombres, vecproductos, productos, vecclisuplimite);
+
+    // Punto 2
+
+    int mayorcli = 0, nummayorcli = 0;
+
+    for (int i = 0; i < nombres; i++) {
+
+        if (vecclisuplimite[i] > mayorcli) {
+
+            mayorcli = vecclisuplimite[i];
+            nummayorcli = i;
+
+        }
+    }
+
+    Nodo2 *lista2 = NULL;
+
+    cout << "\nListado de Km recorridos por tipo de producto (ascendente):\n\n";
+
+    int ultprod = 0; // Para el punto 3
+
+    punto2(lista, lista2, nummayorcli, vecproductos, productos, ultprod);
+
+    // Punto 3
+
+    int entregas = 0;
+
+    punto3(lista, ultprod, entregas);
+
+    cout << "\nCantidad de entregas para el tipo de producto " << vecproductos[ultprod] << ": " << entregas-1 << endl;
+
+
+    return 0;
+}
